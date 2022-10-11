@@ -14,7 +14,7 @@
 ***************************************************************************************/
 
 #include "sdb.h"
-
+#include <isa.h>
 #define NR_WP 32
 
 typedef struct watchpoint {
@@ -22,6 +22,8 @@ typedef struct watchpoint {
   struct watchpoint *next;
 
   /* TODO: Add more members if necessary */
+  word_t old_value;
+  char *expr;
 
 } WP;
 
@@ -40,4 +42,89 @@ void init_wp_pool() {
 }
 
 /* TODO: Implement the functionality of watchpoint */
+void free_wp(WP *wp) {
+	if(wp == NULL) {
+		return;
+	}
+	free(wp->expr);
+// Add to free_
+	wp->next = free_;
+	free_ = wp;
+}
+
+bool del_wp(int NO) {
+	WP* cur = head;
+	WP* prev = NULL;
+	while (cur != NULL) {
+		if (cur->NO == NO) {
+			break;
+		}
+	prev = cur;
+	cur = cur->next;            //遍历列表
+	}
+	if (cur == NULL) {
+		printf("Not found watchpoint [%d]\n", NO);
+		return false;
+	}
+	if (prev == NULL) {
+		head = cur->next;
+	}
+	else {
+		prev->next = cur->next;
+	}
+	free_wp(cur);
+	return true;
+}
+
+WP* new_wp() {
+	if (free_ == NULL) {
+		return NULL;
+	}
+
+	WP* wp = free_;
+	free_ = free_->next;
+
+	wp->next = head;
+	head = wp;
+	return wp;
+}
+
+bool check_wp() {
+	bool success;
+	WP* cur = head;
+	while (cur != NULL) {
+		word_t cur_val = expr(cur->expr, &success);
+		if (cur_val != cur->old_value) {
+			printf("\nWatchpoint [%d]: expr [%s]\n", cur->NO, cur->expr);
+			printf("==> old value = 0x%016lx, new value = 0x%016lx\n", cur->old_value,cur_val);
+			cur->old_value = cur_val;
+			return true;
+		}
+	cur = cur->next;
+	}
+	return false;
+}
+
+int set_wp(char* e) {
+	bool success;	
+	word_t val = expr(e, &success);
+	if (success == false) {
+	return -1;
+	}
+	WP* wp = new_wp();
+	wp->expr = strdup(e);     //指针
+	wp->old_value = val;     
+	return wp->NO;
+}
+
+void display_wp(){
+	if(head==NULL)
+		printf("watchpoint : None\n");
+    else{
+        printf("%-10s %-20s %-10s\n", "NO", "EXPR", "VALUE");
+        for(WP *temp=head; temp!=NULL;temp=temp->next){
+             printf("%-10d %-20s""hex: [ " FMT_WORD " ]" ", dec: [ %ld ]\n", temp->NO,temp->expr,temp->old_value,temp->old_value);
+        }
+    }
+}
 

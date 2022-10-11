@@ -24,8 +24,30 @@ const char *regs[] = {
 };
 
 void isa_reg_display() {
+	printf("General Register: \n");
+	int regs_numb = ARRLEN(regs);
+	for(int m=0; m<regs_numb;m++ ){
+	printf("\t%-3s: "FMT_WORD"\t", regs[m], gpr(m));      //FMT_WORD common.h
+	if ((m+1)%2 == 0) 
+		printf("\n");
+	}
+	printf("Program Counter: \n");
+	printf("\t%-3s: "FMT_WORD"\t\n", "pc", cpu.pc);
+	
 }
 
 word_t isa_reg_str2val(const char *s, bool *success) {
+  int Num = sizeof(regs)/sizeof(regs[0]);
+  if(strcmp(s, "$pc") == 0){
+    *success = true;
+    return cpu.pc;
+  }
+  for(int i = 0; i < Num; i++){
+    if(strcmp(s+1, regs[i]) == 0){
+      *success = true;
+      return gpr(i);
+    }
+  }
+  *success = false;
   return 0;
 }

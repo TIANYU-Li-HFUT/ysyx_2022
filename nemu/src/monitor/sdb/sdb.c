@@ -14,6 +14,7 @@
 ***************************************************************************************/
 
 #include <isa.h>
+#include <memory/vaddr.h>
 #include <cpu/cpu.h>
 #include <readline/readline.h>
 #include <readline/history.h>
@@ -49,22 +50,107 @@ static int cmd_c(char *args) {
 
 
 static int cmd_q(char *args) {
-  return -1;
+	nemu_state.state=NEMU_QUIT;   //解决退出时的warn
+	return -1;
 }
+static int cmd_si(char *args) {
+	int cpu_step = 1;	
+	if (args != NULL) {
+		cpu_step = atoi(args);
+		}
+	cpu_exec(cpu_step);	
+	return 0;
+}
+static int cmd_info(char *args){
+	if(strcmp(args,"r")==0){
+	isa_reg_display();}
+	if(strcmp(args,"w")==0){
+	display_wp();}
+	return 0;
+}
+
+static int cmd_x(char *args){
+	char* number = strtok(args," ");
+	if(number == NULL){
+		printf("Error cmd_x");
+		return 0;
+	}                           //查找第二个空格 “x number input_addr”
+	int N=atoi(number);
+	bool success= true;
+	vaddr_t base_addr = expr(number + strlen(number) + 1, &success);
+	if (!success) {
+		printf("Bad expr!\n");
+		return 0;
+	}
+	int word_size = sizeof(word_t);
+	for (int i = 0; i < N; ++i) {
+		word_t data = vaddr_read(base_addr + i * word_size, word_size);
+		printf(FMT_WORD ": ", (base_addr + i * word_size));
+		//for (int j = 0; j < word_size; ++j) {
+			//printf("0x%02x ", (uint8_t) (data&0xFF));
+			//data >>= 8;
+		//}
+		printf("%016lx",data);
+		printf("\n");
+	}
+	return 0;
+	
+}
+
+static int cmd_p(char *args) {
+	if (args == NULL) {
+		return 0;
+	}
+	bool success = false;
+	word_t val = expr(args, &success);
+	if (!success) return 0;
+	printf("value== " "hex: [ " FMT_WORD " ]" ", dec: [ %ld ]\n", val, val);
+	return 0;
+}
+
+static int cmd_w(char *args) {
+	if (args == NULL) {
+		return 0;
+	}
+	int NO = set_wp(args);
+	if (NO == -1) {
+		printf("Bad expr!\n");
+		return 0;
+	}
+	printf("Set watchpoint [%d]\n", NO);
+	return 0;
+}
+
+static int cmd_d(char *args) {
+	int NO;	
+	if (args == NULL) {
+		return 0;
+		}
+	NO = atoi(args);	
+	if(del_wp(NO))
+	printf("Successfully Delete %d watchpoint",NO);
+	return 0;
+}
+
 
 static int cmd_help(char *args);
 
 static struct {
   const char *name;
   const char *description;
-  int (*handler) (char *);
+  int (*handler) (char *);       //函数指针
 } cmd_table [] = {
   { "help", "Display information about all supported commands", cmd_help },
   { "c", "Continue the execution of the program", cmd_c },
   { "q", "Exit NEMU", cmd_q },
 
   /* TODO: Add more commands */
-
+  { "si", "Single instruction", cmd_si },
+  { "info", "Print register information  r for register m for memory ", cmd_info },
+  { "x","Scan Memory", cmd_x},
+  { "p","Calculate expression",cmd_p},
+  { "w","Set new watch point",cmd_w},
+  { "d","delete watchpoint",cmd_d},
 };
 
 #define NR_CMD ARRLEN(cmd_table)
