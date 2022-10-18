@@ -57,7 +57,7 @@ static struct rule {
   {"\\^", TK_XOR},  
   {"!", TK_NOT},  
   
-  {"!", TK_DREF}, 
+  //{"*", TK_DREF}, 
   
   {"\\(", TK_LBRA}, // left bracket
   {"\\)", TK_RBRA}, // right bracket
@@ -145,6 +145,9 @@ int set_priority(int calculate_token){    //设定计算优先级 参考Verilog
 	int priority=-1;
 	switch(calculate_token){
 		case TK_NOT:
+			priority=0;
+			break;
+		case TK_DREF:
 			priority=0;
 			break;
 		case TK_MUL:
