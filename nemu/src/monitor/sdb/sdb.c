@@ -66,6 +66,27 @@ static int cmd_info(char *args){
 	isa_reg_display();}
 	if(strcmp(args,"w")==0){
 	display_wp();}
+	if (strcmp(args, "iringbuf") == 0)
+  {
+    #ifdef CONFIG_ITRACE_COND
+      void print_iringbuf();
+      print_iringbuf();
+     #endif
+  }
+  if (strcmp(args, "mringbuf") == 0)
+  {
+    #ifdef CONFIG_MTRACE_COND
+      void print_mringbuf();
+      print_mringbuf();
+     #endif
+  }
+  if (strcmp(args, "mtrace") == 0)
+  {
+    #ifdef CONFIG_MTRACE_COND
+      void print_mtrace();
+      print_mtrace();
+     #endif
+  }
 	return 0;
 }
 
